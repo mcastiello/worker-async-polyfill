@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2020
+ * Author: Marco Castiello
+ * E-mail: marco.castiello@gmail.com
+ * Project: Worker Async Polyfill
+ */
+
 import { EventTarget as PolyfillEventTarget } from './event-target.js';
     
 // Check if the Event target class exists and can be extended
