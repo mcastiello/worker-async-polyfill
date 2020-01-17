@@ -1,25 +1,43 @@
 import PolyfillWorker from './worker';
-import WorkerTarget from './worker-target';
+import WorkerChannel from './worker-channel';
 
-// Initialise event map.
+// Initialise event maps.
 const eventMap = new WeakMap();
+const channelMap = new WeakMap();
 
 /**
  * Define the class that provides an asynchronous scope for the target.
  * @type {WorkerScope}
  * @class
- * @extends {WorkerTarget}
+ * @extends {EventTarget}
  */
-class WorkerScope extends WorkerTarget {
+class WorkerScope extends ExtendableEventTarget {
+    /**
+     * Setup the scope.
+     * @param {Worker} reference
+     * @constructor
+     */
+    constructor(reference) {
+        super();
+        
+        const channel = new WorkerChannel(reference);
+        
+        // Initialise maps.
+        eventMap.set(this, {
+            "events": [],
+            "intervals": [],
+            "frames": [],
+            "timeouts" []
+        });
+        channelMap.set(this, channel);
+    }
+        
     /**
      * Initialise all the scope for the worker and then evaluate the code.
-     * @param {Worker} reference
      * @param {String} code
      * @constructor
      */
-    constructor(reference, code) {
-        super(reference);
-        
+    run(code) {
         // Create the self scope.
         const self = {
             "location": document.location,
@@ -27,7 +45,7 @@ class WorkerScope extends WorkerTarget {
             "close": this.terminate,
             "dump": console.log,
             "onmessage": null,
-            "postMessage": this.postMessage,
+            "postMessage": channelMap.get(this).postMessage,
             "addEventListener": this.addEventListener,
             "removeEventListener": this.removeEventListener,
             "dispatchEvent": this.dispatchEvent
@@ -44,19 +62,11 @@ class WorkerScope extends WorkerTarget {
         // Make available Worper specific properties.
         let close = this.terminate;
         let dump = console.log;
-        let postMessage = this.postMessage;
+        let postMessage = self.postMessage;
         let onmessage = null;
         let location = self.location;
         let navigator = self.navigator;
         let Worker = PolyfillWorker;
-        
-        // Initialise maps.
-        eventMap.set(this, {
-            "events": [],
-            "intervals": [],
-            "frames": [],
-            "timeouts" []
-        });
         
         // Add the listener for the "onmessage" callback.
         this.addEventListener("message", event => {
@@ -193,7 +203,8 @@ class WorkerScope extends WorkerTarget {
         
         eventMap.delete(this);
         
-        super.terminate();
+        channelMap.get(this).clear();
+        channelMap.delete(this);
     }
 }
 
