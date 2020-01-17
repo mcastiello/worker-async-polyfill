@@ -1,15 +1,15 @@
 // Define the list of transferable classes.
 const transferableClasses = [];
-if (ArrayBuffer) {
+if (self.ArrayBuffer) {
     transferableClasses.push(ArrayBuffer);
 }
-if (MessagePort) {
+if (self.MessagePort) {
     transferableClasses.push(MessagePort);
 }
-if (ImageBitmap) {
+if (self.ImageBitmap) {
     transferableClasses.push(ImageBitmap);
 }
-if (OffscreenCanvas) {
+if (self.OffscreenCanvas) {
     transferableClasses.push(OffscreenCanvas);
 }
 
@@ -24,11 +24,11 @@ const referenceMap = new WeakMap();
  * @returns {Array}
  * @private
  */
-const cloneArray = (list, transfer, circular) {
+const cloneArray = (list, transfer, circular) => {
     const result = [];
     
     for (let element of list) {
-        element = copyElement(element, transfer, circular);
+        element = cloneElement(element, transfer, circular);
         
         if (element !== undefined) {
             result.push(element);
@@ -46,7 +46,7 @@ const cloneArray = (list, transfer, circular) {
  * @returns {Object}
  * @private
  */
-const cloneObject = (obj, transfer, circular) {
+const cloneObject = (obj, transfer, circular) => {
     const result = {};
     
     obj = Object.assign({}, obj);
@@ -68,7 +68,7 @@ const cloneObject = (obj, transfer, circular) {
  * Create a copy of an element making sure that there aren't any 
  * circular dependencies (an object property referencing something 
  * already present somewhere else).
- * @param {Object} obj
+ * @param {Object} element
  * @param {Array} transfer
  * @param {Array} circular
  * @returns {Object}
@@ -76,7 +76,7 @@ const cloneObject = (obj, transfer, circular) {
  */
 const cloneElement = (element, transfer, circular) => {
     if (element && typeof element === "object" && transfer.indexOf(element) < 0) {
-        if (circular.indexOf(content) >= 0) {
+        if (circular.indexOf(element) >= 0) {
             element = undefined;
         } else {
             circular.push(element);
@@ -90,7 +90,7 @@ const cloneElement = (element, transfer, circular) => {
     }
     
     return element;
-}
+};
 
 /**
  * Parse the message data and return a transferable copy.
@@ -99,9 +99,9 @@ const cloneElement = (element, transfer, circular) => {
  * @returns {*}
  * @private
  */
-const parseMessageData = (data, transfer) {
+const parseMessageData = (data, transfer) => {
     transfer = Array.isArray(transfer) ? transfer.filter(obj => {
-        for (for cls of transferableClasses) {
+        for (let cls of transferableClasses) {
             if (obj instanceof cls) {
                 return true;
             }
@@ -123,11 +123,10 @@ const parseMessageData = (data, transfer) {
 class WorkerChannel {
     /**
      * Initialise all the scope for the worker and then evaluate the code.
-     * @param {Worker} reference
+     * @param {Worker|WorkerScope} reference
      * @constructor
      */
     constructor(reference) {
-        super();
         referenceMap.set(this, reference);
     }
     
@@ -140,7 +139,7 @@ class WorkerChannel {
         if (referenceMap.has(this)) {
             const event = new Event("message");
 
-            event.data = parseMessageData(message);
+            event.data = parseMessageData(message, transfer);
             referenceMap.get(this).dispatchEvent(event);
         }
     }
@@ -155,4 +154,4 @@ class WorkerChannel {
     }
 }
 
-export default WorkerChannel;
+export { WorkerChannel };
