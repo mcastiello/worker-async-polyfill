@@ -1,13 +1,12 @@
-
 // Create a map of all the even handlers.
 const eventHandlerMap = new WeakMap();
 
 /**
  * Define a class similar to the EventTarget but that can be extended.
- * @type {ExtendableEventTarget}
+ * @type {EventTarget}
  * @class
  */
-class ExtendableEventTarget {
+class EventTarget {
     /**
      * Initialise the event map.
      * @constructor
@@ -66,17 +65,5 @@ class ExtendableEventTarget {
         }
     }
 }
-    
-// Check if the Event target class exists and can be extended
-let available = false;
-if (EventTarget) {
-    try {
-        new EventTarget(); 
-        available = true
-    } catch (e) {}
-}
 
-// If not, creates a simple replacement
-window.ExtendableEventTarget = available ? window.EventTarget : ExtendableEventTarget;
-
-export default ExtendableEventTarget;
+export default EventTarget;
