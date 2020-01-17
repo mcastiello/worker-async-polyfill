@@ -54,21 +54,22 @@ const cloneArray = (list, transfer, circular) => {
  * @private
  */
 const cloneObject = (obj, transfer, circular) => {
-    const result = {};
+    try {   
+        obj = Object.assign({}, obj);
     
-    obj = Object.assign({}, obj);
-    
-    const keys = Object.keys(obj);
-    
-    for (let key of keys) {
-        const content = cloneElement(obj[key], transfer, circular);
+        const keys = Object.keys(obj);
+        const result = {};
+
+        for (let key of keys) {
+            const content = cloneElement(obj[key], transfer, circular);
         
-        if (content !== undefined) {
-            result[key] = content;
+            if (content !== undefined) {
+                result[key] = content;
+            }
         }
-    }
     
-    return result;
+        return result;
+    } catch (error) {}
 };
 
 /**
