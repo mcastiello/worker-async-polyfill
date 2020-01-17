@@ -1,4 +1,3 @@
-
 // Define the list of transferable classes.
 const transferableClasses = [];
 if (ArrayBuffer) {
@@ -120,7 +119,7 @@ const parseMessageData = (data, transfer) {
  * worker and its async scope to communicate.
  * @type {WorkerTarget}
  * @class
- * @extends {ExtendableEventTarget}
+ * @extends {EventTarget}
  */
 class WorkerTarget extends ExtendableEventTarget {
     /**
