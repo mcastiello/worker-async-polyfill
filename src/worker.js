@@ -34,19 +34,48 @@ class Worker extends ExtendableEventTarget {
         channelMap.set(this, channel);
         
         const xhr = new XMLHttpRequest();
+        
+        this.onmessage = null;
+        this.onmessageerror = null;
+        this.onerror = null;
 
         xhr.open("GET", url);
         xhr.onreadystatechange = () => {
             if(xhr.readyState === XMLHttpRequest.DONE) {
                 if (xhr.status === 200) {
+                    // Make sure that the message callbacks executed 
+                    // when a message is posted by the worker.
+                    scope.addEventListener("message", event => {
+                        if (typeof this.onmessage === "function") {
+                            this.onmessage(event);
+                        }
+                    });
+                    scope.addEventListener("messageerror", event => {
+                        if (typeof this.onmessageerror === "function") {
+                            this.onmessageerror(event);
+                        }
+                    });
+                    this.addEventListener("error", event => {
+                        if (typeof this.onerror === "function") {
+                            this.onerror(event);
+                        }
+                    });
+                    
+                    // Execute the code.
                     scope.run(xhr.responseText);
+                    
+                    // Check if the code is running.
                     if (!scope.running) {
+                        const event = new Event("error");
+                        event.message = "Unable to execute Worker code!";
                         this.terminate();
-                        throw new Error("Unable to execute Worker code!");
+                        this.dispatchEvent(event);
                     }
-                } else {
+                } else { // Notify that it wasn't possible to load the file.
+                    const event = new Event("error");
+                    event.message = "Worker code not available!";
                     this.terminate();
-                    throw new Error("Worker code not available!");
+                    this.dispatchEvent(event);
                 }
             }
         };
