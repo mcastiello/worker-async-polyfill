@@ -115,13 +115,12 @@ const parseMessageData = (data, transfer) {
 };
 
 /**
- * Define the class that provides the allow 
- * worker and its async scope to communicate.
- * @type {WorkerTarget}
+ * Define the class that provides a communication 
+ * channel between the worker and its scope.
+ * @type {WorkerChannel}
  * @class
- * @extends {EventTarget}
  */
-class WorkerTarget extends ExtendableEventTarget {
+class WorkerChannel {
     /**
      * Initialise all the scope for the worker and then evaluate the code.
      * @param {Worker} reference
@@ -156,4 +155,4 @@ class WorkerTarget extends ExtendableEventTarget {
     }
 }
 
-export default WorkerTarget;
+export default WorkerChannel;
