@@ -66,4 +66,4 @@ class EventTarget {
     }
 }
 
-export default EventTarget;
+export { EventTarget };
