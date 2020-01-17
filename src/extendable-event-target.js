@@ -1,4 +1,4 @@
-import PolyfillEventTarget from './event-target';
+import { EventTarget as PolyfillEventTarget } from './event-target.js';
     
 // Check if the Event target class exists and can be extended
 let available = false;
