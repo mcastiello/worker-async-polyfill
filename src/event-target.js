@@ -10,7 +10,7 @@ if (EventTarget) {
 
 // If not, creates a simple replacement
 if (!available) {
-    const eventHandlerMap = new Map();
+    const eventHandlerMap = new WeakMap();
 
     class EventTarget {
         /**
