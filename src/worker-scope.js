@@ -8,6 +8,7 @@ const eventMap = new WeakMap();
  * Define the class that provides an asynchronous scope for the target.
  * @type {WorkerScope}
  * @class
+ * @extends {WorkerTarget}
  */
 class WorkerScope extends WorkerTarget {
     /**
