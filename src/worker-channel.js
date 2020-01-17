@@ -148,7 +148,7 @@ class WorkerChannel {
     /**
      * Clear the memory.
      */
-    terminate() {
+    clear() {
         if (referenceMap.has(this)) {
             referenceMap.delete(this);
         }
