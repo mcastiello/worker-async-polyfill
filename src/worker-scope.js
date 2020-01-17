@@ -1,9 +1,10 @@
-import PolyfillWorker from './worker';
-import WorkerChannel from './worker-channel';
+import { Worker as PolyfillWorker } from './worker.js';
+import { WorkerChannel } from './worker-channel.js';
 
 // Initialise event maps.
 const eventMap = new WeakMap();
 const channelMap = new WeakMap();
+const originalAnimationFrame = (callback) => self.requestAnimationFrame(callback);
 
 /**
  * Define the class that provides an asynchronous scope for the target.
@@ -19,21 +20,21 @@ class WorkerScope extends ExtendableEventTarget {
      */
     constructor(reference) {
         super();
-        
+
         const channel = new WorkerChannel(reference);
-        
+
         this.running = false;
-        
+
         // Initialise maps.
         eventMap.set(this, {
             "events": [],
             "intervals": [],
             "frames": [],
-            "timeouts" []
+            "timeouts": []
         });
         channelMap.set(this, channel);
     }
-        
+
     /**
      * Initialise all the scope for the worker and then evaluate the code.
      * @param {String} code
@@ -41,7 +42,7 @@ class WorkerScope extends ExtendableEventTarget {
      */
     run(code) {
         this.running = true;
-        
+
         // Create the self scope.
         const self = {
             "location": document.location,
@@ -49,29 +50,29 @@ class WorkerScope extends ExtendableEventTarget {
             "close": this.terminate,
             "dump": console.log,
             "onmessage": null,
-            "postMessage": channelMap.get(this).postMessage,
+            "postMessage": (...params) => channelMap.get(this).postMessage(...params),
             "addEventListener": this.addEventListener,
             "removeEventListener": this.removeEventListener,
             "dispatchEvent": this.dispatchEvent
         };
-        
+
         // Initialising timing functions.
-        let setTimeout = this.setTimeout;
-        let setInterval = this.setInterval;
-        let requestAnimationFrame = this.requestAnimationFrame;
-        let clearTimeout = this.clearTimeout;
-        let clearInterval = this.clearInterval;
-        let cancelAnimationFrame = this.cancelAnimationFrame;
-        
+        let setTimeout = (...params) => this.setTimeout(...params);
+        let setInterval = (...params) => this.setInterval(...params);
+        let requestAnimationFrame = (...params) => this.requestAnimationFrame(...params);
+        let clearTimeout = (...params) => this.clearTimeout(...params);
+        let clearInterval = (...params) => this.clearInterval(...params);
+        let cancelAnimationFrame = (...params) => this.cancelAnimationFrame(...params);
+
         // Make available Worper specific properties.
-        let close = this.terminate;
-        let dump = console.log;
+        let close = () => this.terminate();
+        let dump = (...params) => console.log();
         let postMessage = self.postMessage;
         let onmessage = null;
         let location = self.location;
         let navigator = self.navigator;
         let Worker = PolyfillWorker;
-        
+
         // Add the listener for the "onmessage" callback.
         this.addEventListener("message", event => {
             const callback = onmessage || self.onmessage;
@@ -79,13 +80,34 @@ class WorkerScope extends ExtendableEventTarget {
                 callback(event);
             }
         });
-        
+
         try {
             // Execute the code.
             eval(code);
         } catch {
             this.running = false;
         }
+
+        // Execute the checks for the worker status to see if something is still happening.
+        const workerStatusCheck = () => {
+            let events, timeouts, intervals, frames;
+            if (eventMap.has(this)) {
+                events = eventMap.get(this).events.length > 1 ||
+                    typeof onmessage === "function" || typeof self.onmessage === "function";
+                timeouts = eventMap.get(this).timeouts.length > 0;
+                intervals = eventMap.get(this).intervals.length > 0;
+                frames = eventMap.get(this).frames.length > 0;
+            }
+
+            this.running = events || timeouts || intervals || frames;
+
+            if (this.running) {
+                originalAnimationFrame(workerStatusCheck);
+            } else {
+                this.terminate();
+            }
+        };
+        originalAnimationFrame(workerStatusCheck);
     }
 
     /**
@@ -94,34 +116,38 @@ class WorkerScope extends ExtendableEventTarget {
      */
     setTimeout(...params) {
         if (eventMap.has(this)) {
-            const index = window.setTimeout(...params);
+            const index = self.setTimeout(...params);
             eventMap.get(this).timeouts.push(index);
+
+            self.setTimeout(() => this.clearTimeout(index), (params[1]||0)+1);
 
             return index;
         }
     }
-    
+
     /**
      * Keep tracks of all the created intervals.
      * @returns {Number}
      */
     setInterval(...params) {
         if (eventMap.has(this)) {
-            const index = window.setInterval(...params);
+            const index = self.setInterval(...params);
             eventMap.get(this).intervals.push(index);
 
             return index;
         }
     }
-    
+
     /**
      * Keep tracks of all the created frame requests.
      * @returns {Number}
      */
     requestAnimationFrame(...params) {
         if (eventMap.has(this)) {
-            const index = window.requestAnimationFrame(...params);
+            const index = self.requestAnimationFrame(...params);
             eventMap.get(this).frames.push(index);
+
+            self.requestAnimationFrame(() => this.cancelAnimationFrame(index));
 
             return index;
         }
@@ -139,10 +165,10 @@ class WorkerScope extends ExtendableEventTarget {
                 list.splice(id, 1);
             }
 
-            return window.clearTimeout(index);
+            return self.clearTimeout(index);
         }
     }
-    
+
     /**
      * Clear an interval.
      * @param {Number} index
@@ -155,10 +181,10 @@ class WorkerScope extends ExtendableEventTarget {
                 list.splice(id, 1);
             }
 
-            return window.clearInterval(index);
+            return self.clearInterval(index);
         }
     }
-    
+
     /**
      * Cancel a frame request.
      * @param {Number} index
@@ -171,10 +197,10 @@ class WorkerScope extends ExtendableEventTarget {
                 list.splice(id, 1);
             }
 
-            return window.cancelAnimationFrame(index);
+            return self.cancelAnimationFrame(index);
         }
     }
-    
+
     /**
      * Override the addEventListener in order to keep track of the added listeners.
      */
@@ -184,9 +210,9 @@ class WorkerScope extends ExtendableEventTarget {
             return super.addEventListener(...params);
         }
     }
-    
+
     /**
-     * Destroy the worker scope by clearing all the timing 
+     * Destroy the worker scope by clearing all the timing
      * functions and removing all the event listeners.
      */
     terminate() {
@@ -201,25 +227,23 @@ class WorkerScope extends ExtendableEventTarget {
                 this.removeEventListener(...events[i]);
             }
             for (i=0, ii=timeouts.length; i<ii; i++) {
-                window.clearTimeout(timeouts[i]);
+                this.clearTimeout(timeouts[i]);
             }
             for (i=0, ii=intervals.length; i<ii; i++) {
-                window.clearInterval(intervals[i]);
+                this.clearInterval(intervals[i]);
             }
             for (i=0, ii=frames.length; i<ii; i++) {
-                window.cancelAnimationFrame(frames[i]);
+                this.cancelAnimationFrame(frames[i]);
             }
 
             eventMap.delete(this);
         }
-        
+
         if (channelMap.has(this)) {
             channelMap.get(this).clear();
             channelMap.delete(this);
         }
-        
-        this.running = false;
     }
 }
 
-export default WorkerScope;
+export { WorkerScope };
