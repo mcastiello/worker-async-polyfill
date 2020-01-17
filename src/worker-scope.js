@@ -91,8 +91,11 @@ class WorkerScope extends ExtendableEventTarget {
         try {
             // Execute the code.
             eval(code);
-        } catch {
+        } catch (error) {
             this.running = false;
+            const event = new Event("messageerror");
+            event.message = error;
+            this.dispatchEvent(event);
         }
 
         // Execute the checks for the worker status to see if something is still happening.
