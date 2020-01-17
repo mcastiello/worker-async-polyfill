@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2020
+ * Author: Marco Castiello
+ * E-mail: marco.castiello@gmail.com
+ * Project: Worker Async Polyfill
+ */
+
 // Define the list of transferable classes.
 const transferableClasses = [];
 if (self.ArrayBuffer) {
