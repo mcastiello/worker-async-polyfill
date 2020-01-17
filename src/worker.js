@@ -81,19 +81,17 @@ class Worker extends ExtendableEventTarget {
                 .then(code => runCode(code))
                 .catch(error => notifyError(error));
         } else if (typeof urlOrBlob === "string") {
-            if (isValidURL(urlOrBlob)) {
-                xhr.open("GET", urlOrBlob);
-                xhr.onreadystatechange = () => {
-                    if(xhr.readyState === XMLHttpRequest.DONE) {
-                        if (xhr.status === 200) {
-                            runCode(xhr.responseText);
-                        } else {
-                            notifyError("Worker code not available!");
-                        }
+            xhr.open("GET", urlOrBlob);
+            xhr.onreadystatechange = () => {
+                if(xhr.readyState === XMLHttpRequest.DONE) {
+                    if (xhr.status === 200) {
+                        runCode(xhr.responseText);
+                    } else {
+                        notifyError("Worker code not available!");
                     }
-                };
-                xhr.send();
-            }
+                }
+            };
+            xhr.send();
         }
     }
 

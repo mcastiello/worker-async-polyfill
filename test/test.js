@@ -10,6 +10,20 @@ self.EventTarget = null;
 
 require('../src/extendable-event-target.js');
 const {Worker} = require('../src/worker.js');
+
+// Mocking the Blob class to make sure that the text method exists.
+class MockBlob extends Blob {
+    constructor(parts) {
+        super(parts);
+        this.parts = parts.slice();
+    }
+
+    async text() {
+        return this.parts.join(";");
+    }
+}
+
+// Create a test worker
 const workerCode = () => {
     postMessage("Test");
     onmessage = event => {
@@ -32,10 +46,11 @@ const workerCode = () => {
     };
 };
 const workerData = "(" + workerCode.toString() +")()";
+const blob = new MockBlob([workerData]);
 
 describe('Worker', () => {
     it("should create and handle the Worker", done => {
-        const worker = new Worker(workerData);
+        const worker = new Worker(blob);
 
         worker.addEventListener("message", event => {
             expect(worker.running).toBeTruthy();
@@ -45,7 +60,7 @@ describe('Worker', () => {
         });
     });
     it("should be able to communicate data", done => {
-        const worker = new Worker(workerData);
+        const worker = new Worker(blob);
 
         setTimeout(() => {
             worker.addEventListener("message", event => {
@@ -58,7 +73,7 @@ describe('Worker', () => {
         }, 10);
     });
     it("should be able to transfer data", done => {
-        const worker = new Worker(workerData);
+        const worker = new Worker(blob);
         const buffer = new ArrayBuffer(5);
 
         setTimeout(() => {
@@ -73,7 +88,7 @@ describe('Worker', () => {
         }, 10);
     });
     it("should be able to clone non transferable data", done => {
-        const worker = new Worker(workerData);
+        const worker = new Worker(blob);
         const obj = {
             "testObject": true
         };
@@ -91,7 +106,7 @@ describe('Worker', () => {
         }, 10);
     });
     it("should be able to terminate the Worker", done => {
-        const worker = new Worker(workerData);
+        const worker = new Worker(blob);
 
         worker.addEventListener("message", event => {
             expect(worker.running).toBeTruthy();
@@ -103,7 +118,7 @@ describe('Worker', () => {
         });
     });
     it("should send an error if Worker cannot load", done => {
-        const worker = new Worker("textThatDoesntWork");
+        const worker = new Worker(new MockBlob(["textThatDoesntWork"]));
 
         worker.addEventListener("error", event => {
             expect(typeof event.message === "string").toBeTruthy();
