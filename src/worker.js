@@ -1,5 +1,5 @@
-import WorkerChannel from './worker-channel';
-import WorkerScope from './worker-scope';
+import { WorkerChannel } from './worker-channel.js';
+import { WorkerScope } from './worker-scope.js';
 
 // Initialise event maps.
 const scopeMap = new WeakMap();
@@ -38,12 +38,20 @@ class Worker extends ExtendableEventTarget {
                         throw new Error("Unable to execute Worker code!");
                     }
                 } else {
-                    throw new Error("Worker code not available!");
                     this.terminate();
+                    throw new Error("Worker code not available!");
                 }
             }
         };
         xhr.send();
+    }
+
+    /**
+     * Check if the Worker is running.
+     * @returns {Boolean}
+     */
+    get running() {
+        return Boolean(scopeMap.has(this) && scopeMap.get(this).running);
     }
     
     /**
@@ -71,4 +79,4 @@ class Worker extends ExtendableEventTarget {
     }
 }
 
-export default Worker
+export { Worker };
