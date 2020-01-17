@@ -13,15 +13,6 @@ const scopeMap = new WeakMap();
 const channelMap = new WeakMap();
 
 /**
- * Check if a URL is valid.
- * @param {String} string
- * @returns {Boolean}
- */
-const isValidURL = (string) => {
-    return /^(http(s)?:\/\/.|\.\/|\/)?(www\.)?[-a-zA-Z0-9@:%._+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_+.~#?&/=]*)/g.test(string);
-};
-
-/**
  * Provide a polyfill for the Worker class. The code is not executed 
  * in a new thread but it is ran asynchronously.
  * @type {Worker}
@@ -86,7 +77,9 @@ class Worker extends ExtendableEventTarget {
         });
 
         if (urlOrBlob instanceof Blob) {
-            urlOrBlob.text().then(code => runCode(code)).catch(error => notifyError(error));
+            urlOrBlob.text()
+                .then(code => runCode(code))
+                .catch(error => notifyError(error));
         } else if (typeof urlOrBlob === "string") {
             if (isValidURL(urlOrBlob)) {
                 xhr.open("GET", urlOrBlob);
@@ -100,8 +93,6 @@ class Worker extends ExtendableEventTarget {
                     }
                 };
                 xhr.send();
-            } else {
-                setTimeout(() => runCode(urlOrBlob), 0);
             }
         }
     }
