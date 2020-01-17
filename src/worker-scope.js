@@ -22,6 +22,8 @@ class WorkerScope extends ExtendableEventTarget {
         
         const channel = new WorkerChannel(reference);
         
+        this.running = false;
+        
         // Initialise maps.
         eventMap.set(this, {
             "events": [],
@@ -38,6 +40,8 @@ class WorkerScope extends ExtendableEventTarget {
      * @constructor
      */
     run(code) {
+        this.running = true;
+        
         // Create the self scope.
         const self = {
             "location": document.location,
@@ -76,8 +80,12 @@ class WorkerScope extends ExtendableEventTarget {
             }
         });
         
-        // Execute the code.
-        eval(code);
+        try {
+            // Execute the code.
+            eval(code);
+        } catch {
+            this.running = false;
+        }
     }
 
     /**
@@ -182,29 +190,35 @@ class WorkerScope extends ExtendableEventTarget {
      * functions and removing all the event listeners.
      */
     terminate() {
-        const events = eventMap.get(this).events.slice();
-        const timeouts = eventMap.get(this).timeouts.slice();
-        const intervals = eventMap.get(this).intervals.slice();
-        const frames = eventMap.get(this).frames.slice();
-        let i, ii;
+        if (eventMap.has(this)) {
+            const events = eventMap.get(this).events.slice();
+            const timeouts = eventMap.get(this).timeouts.slice();
+            const intervals = eventMap.get(this).intervals.slice();
+            const frames = eventMap.get(this).frames.slice();
+            let i, ii;
+
+            for (i=0, ii=events.length; i<ii; i++) {
+                this.removeEventListener(...events[i]);
+            }
+            for (i=0, ii=timeouts.length; i<ii; i++) {
+                window.clearTimeout(timeouts[i]);
+            }
+            for (i=0, ii=intervals.length; i<ii; i++) {
+                window.clearInterval(intervals[i]);
+            }
+            for (i=0, ii=frames.length; i<ii; i++) {
+                window.cancelAnimationFrame(frames[i]);
+            }
+
+            eventMap.delete(this);
+        }
         
-        for (i=0, ii=events.length; i<ii; i++) {
-            this.removeEventListener(...events[i]);
-        }
-        for (i=0, ii=timeouts.length; i<ii; i++) {
-            window.clearTimeout(timeouts[i]);
-        }
-        for (i=0, ii=intervals.length; i<ii; i++) {
-            window.clearInterval(intervals[i]);
-        }
-        for (i=0, ii=frames.length; i<ii; i++) {
-            window.cancelAnimationFrame(frames[i]);
+        if (channelMap.has(this)) {
+            channelMap.get(this).clear();
+            channelMap.delete(this);
         }
         
-        eventMap.delete(this);
-        
-        channelMap.get(this).clear();
-        channelMap.delete(this);
+        this.running = false;
     }
 }
 
