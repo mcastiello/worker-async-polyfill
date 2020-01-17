@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2020
+ * Author: Marco Castiello
+ * E-mail: marco.castiello@gmail.com
+ * Project: Worker Async Polyfill
+ */
+
 import { Worker as PolyfillWorker } from './worker.js';
 import { WorkerChannel } from './worker-channel.js';
 
