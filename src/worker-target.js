@@ -110,8 +110,7 @@ const parseMessageData = (data, transfer) {
         return false;
     }) : [];
     
-    circular = circular || [];
-    
+    const circular = [];
     
     return cloneElement(data, transfer, circular);
 };
@@ -141,11 +140,8 @@ class WorkerTarget extends EventTarget {
     postMessage(message, transfer) {
         if (referenceMap.has(this)) {
             const event = new Event("message");
-            if (message && typeof message === "object") {
-                message = parseMessageData(message, transfer);
-            }
 
-            event.data = message;
+            event.data = parseMessageData(message);
             referenceMap.get(this).dispatchEvent(event);
         }
     }
