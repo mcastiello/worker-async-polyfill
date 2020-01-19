@@ -58,9 +58,14 @@ class WorkerScope extends ExtendableEventTarget {
             "dump": console.log,
             "onmessage": null,
             "postMessage": (...params) => channelMap.get(this).postMessage(...params),
-            "addEventListener": this.addEventListener,
-            "removeEventListener": this.removeEventListener,
-            "dispatchEvent": this.dispatchEvent
+            "addEventListener": (...params) => this.addEventListener(...params),
+            "removeEventListener": (...params) => this.removeEventListener(...params),
+            "dispatchEvent": (...params) => this.dispatchEvent(...params),
+            // Add transferable classes
+            "ArrayBuffer": window.ArrayBuffer,
+            "MessagePort": window.MessagePort,
+            "ImageBitmap": window.ImageBitmap,
+            "OffscreenCanvas": window.OffscreenCanvas
         };
 
         // Initialising timing functions.

@@ -1,8 +1,8 @@
 {
   "name": "worker-async-polyfill",
-  "version": "1.0.0",
+  "version": "1.0.8",
   "description": "A simple polyfill to be used where the browser doesn't provide the Worker class. BE AWARE: while the code will work asynchronously, it won't run in a separate thread.",
-  "main": "src/index.js",
+  "main": "dist/worker-async-polyfill.js",
   "directories": {
     "test": "test"
   },

@@ -146,9 +146,10 @@ class WorkerChannel {
     postMessage(message, transfer) {
         if (referenceMap.has(this)) {
             const event = new Event("message");
+            const ref = referenceMap.get(this);
 
             event.data = parseMessageData(message, transfer);
-            referenceMap.get(this).dispatchEvent(event);
+            setTimeout(() => ref.dispatchEvent(event));
         }
     }
     
